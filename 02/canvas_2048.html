@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html>
+<head lang="en">
+<meta charset="UTF-8">
+<title> 2048 </title>
+<script src="js/plugin/jquery.min.js"></script>
+<style>
+  *{
+    box-sizing: border-box;
+    -moz-box-sizing: border-box;
+    -webkit-box-sizing: border-box;
+  }
+  #bg_img{
+    width: 480px;
+    height: 480px;
+    margin: 0 auto;
+    background: #bbada0;
+    border-radius: 10px;
+    padding-top: 16px;
+    padding-left: 16px;
+    position: relative;
+  }
+  .row{
+    width: 448px;
+    height: 100px;
+    margin-bottom: 16px;
+  }
+  .col{
+    width: 100px;
+    height: 100px;
+    float: left;
+    margin-right: 16px;
+    background: #ccc0b3;
+    border-radius: 6px;
+  }
+  .row .col:last-child{
+    margin: 0;
+  }
+  canvas{
+    position: absolute;
+    top: 16px;left: 16px;
+  }
+</style>
+</head>
+<body>
+  <div id="bg_img">
+    <canvas id="canvas" width="448" height="448"></canvas>
+    <div class="row">
+      <div class="col"></div>
+      <div class="col"></div>
+      <div class="col"></div>
+      <div class="col"></div>
+    </div>
+    <div class="row">
+      <div class="col"></div>
+      <div class="col"></div>
+      <div class="col"></div>
+      <div class="col"></div>
+    </div>
+    <div class="row">
+      <div class="col"></div>
+      <div class="col"></div>
+      <div class="col"></div>
+      <div class="col"></div>
+    </div>
+    <div class="row">
+      <div class="col"></div>
+      <div class="col"></div>
+      <div class="col"></div>
+      <div class="col"></div>
+    </div>
+  </div>
+  <script>
+    var ctx = canvas.getContext("2d");
+    var imgs = new Array(13);
+    var isgoOn = [];
+    for(var i=0;i<imgs.length;i++){
+      imgs[i] = new Image();
+      imgs[i].src = "img/2048/"+Math.pow(2,i+1)+".png";
+      imgs[i].onload =function(){//当图片加载完成时
+        isgoOn.push(true);
+      }
+    }
+    var timer = null;
+    timer = setInterval(function(){
+      if(isgoOn.length === imgs.length){//当图片全部加载完成时
+        doResponce();
+        clearInterval(timer);
+        timer = null;
+      }
+    },50);
+    function doResponce(){
+      var arr = new Array(4);//声明数组 表明显示的数字
+      for(var i=0;i<arr.length;i++){//构建二维数据 待见显示框架
+        arr[i] = [-1,-1,-1,-1];
+      }
+      function creatNum(){//随机产生 2 4
+        var x = Math.floor(Math.random()*4);
+        var y = Math.floor(Math.random()*4);
+        var i = Math.floor(Math.random()*2);
+        if(arr[y][x] !== -1){//当产生的已存在，重新生成
+          creatNum();
+        }else{
+            arr[y][x] = i;//添加到数组
+            ctx.drawImage(imgs[i],116*x,116*y);
+        }
+      }
+      creatNum();creatNum();//开始产生两个
+
+      function draw(){//绘制
+        for(var i=0;i<arr.length;i++){
+          for(var j=0;j<arr[i].length;j++){
+            if(arr[i][j] !== -1){
+              var n = arr[i][j];
+              ctx.drawImage(imgs[n],116*j,116*i);
+            }
+          }
+        }
+      }
+      document.onkeydown=function(e){//当键盘按下
+        if(e.keyCode === 37 || e.keyCode === 38 || e.keyCode === 39 || e.keyCode === 40){//判断为上下左右
+          var before = String(arr);//开始前为数组拍照
+          if(e.keyCode === 38 || e.keyCode === 40){//如果为上下，搭建新数组
+            var str = new Array(4);
+            for(var i=0;i<str.length;i++){
+              str[i] = new Array();
+            }
+            for(var i=0;i<arr.length;i++){//
+              for(var j=0;j<str.length;j++){
+                str[j].push(arr[i][j]);
+              }
+            }
+            change(str,e.keyCode);
+            arr = new Array(4);//将数组改为框架模式
+            for(var i=0;i<arr.length;i++){
+              arr[i] = new Array();
+            }
+            for(var i=0;i<str.length;i++){
+              for(var j=0;j<str.length;j++){
+                arr[j].push(str[i][j])
+              }
+            }
+          }else{
+            change(arr,e.keyCode);
+          }
+          var after = String(arr);//结尾为数组拍照
+          if(before !== after){
+            ctx.clearRect(0,0,448,448);
+            draw();
+            creatNum();
+          }else{
+            //判断游戏是否结束
+            var str = arr.join("");
+            if(!/-1/.test(str)){ 
+              var isOver = true;
+              for(var i=0;i<arr.length;i++){
+                for(var j=0;j<arr[i].length;j++){
+                  if( ( j + 1 < arr.length && arr[i][j] === arr[i][j+1] ) || ( i + 1 < arr.length && arr[j][i] === arr[j][i+1] ) ){
+                    i = arr.length;
+                    j = arr[i].length;
+                    isOver = false;
+                  }
+                }
+              }
+              if(isOver){
+                console.log("GameOver");
+              }
+            }
+          }
+        }
+      }
+      function change(arr,e){
+        for(var i=0;i<arr.length;i++){//便利传入的二维数组
+          arr[i] = arr[i].join("").split("-1").join("").split("");//将数组拼接，去掉其中为零的列
+          var n = arr[i].length;
+          for(var j=0;j<n;j++){//将字符串类型转换为 数字
+            arr[i][j] = parseFloat(arr[i][j]);
+          }
+          //判断 移动的方向，将数组重新构建成 4 x 4 的二维数组
+          if(e === 39 || e === 40){
+            for(var j=0;j<(4-n);j++){
+              arr[i].unshift(-1);
+            }
+            for(var j=arr[i].length-1;j>0;j--){
+              if(arr[i][j] !== -1 && arr[i][j] === arr[i][j-1]){
+                arr[i][j] += 1;
+                arr[i].splice(j-1,1);
+                arr[i].unshift(-1);
+              }
+            }
+          }else if(e === 37 || e === 38){
+            for(var j=0;j<(4-n);j++){
+              arr[i].push(-1);
+            }
+            for(var j=0;j<arr[i].length-1;j++){
+              if(arr[i][j] !== -1 && arr[i][j] === arr[i][j+1]){
+                arr[i][j] += 1;
+                arr[i].splice(j+1,1);
+                arr[i].push(-1);
+              }
+            }
+          }
+        }
+      }
+    };
+  </script>
+</body>
+</html>

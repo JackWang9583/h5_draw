@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html>
+<head lang="en">
+    <meta charset="UTF-8">
+    <title></title>
+    <style>
+        #canvas{
+            margin: 20px auto;
+            background: gray;
+            display: block;
+        }
+    </style>
+</head>
+<body>
+    <div class="msg"></div>  
+    <canvas width="1000" height="800" id="canvas"></canvas>
+    <script src="jquery.min.js"></script>
+    <script>
+        var ctx = canvas.getContext("2d");
+        var imgo = new Image();
+        var blue = [];
+        for(var i=0;i<30;i++){
+            var islegal = true;
+            var r = Math.random() * 70 + 30;
+            var x = Math.random() * 1000;
+            var y = Math.random() * 800;
+            for(var j = 0;j<blue.length;j++){
+                var countx = Math.pow(blue[j].x - x,2);
+                var county = Math.pow(blue[j].y - y,2);
+                var countr = Math.pow(blue[j].r/2 + r/2,2);
+                if(countr > countx + county){
+                    islegal = false;
+                }
+            }
+            if(islegal){
+                blue[i] = [];
+                blue[i].x = x;blue[i].y = y;blue[i].r = r;
+            }else{
+                i = i-1;
+            }
+        }
+        var imgR = new Image();
+        var imgB = new Image();
+        imgB.src = "蓝泡.png";
+        imgB.onload = function(){
+            imgR.src = "红泡.png";
+            imgR.onload = function(){
+                doResponce();
+            }
+        }
+        function doResponce(){
+            function drawBlue(){
+                for(var i=0;i<blue.length;i++){
+                    ctx.drawImage(imgB,blue[i].x,blue[i].y,blue[i].r,blue[i].r);
+                }
+            }
+            drawBlue();
+            var rx,ry;
+            $("#canvas").mousemove(function(e){
+                ctx.clearRect(0,0,1000,800);
+                rx = e.offsetX - 50;
+                ry = e.offsetY - 50;
+                if(rx<=0)
+                    rx = 0;
+                if(x>=900)
+                    rx = 900;
+                if(ry<=0)
+                    ry = 0;
+                if(ry>=700)
+                    ry = 700;
+                ctx.drawImage(imgR,rx,ry,100,100);
+                for(var j = 0;j<blue.length;j++){
+                    var countx = Math.pow(blue[j].x + blue[j].r/2 - rx - 50,2);
+                    var county = Math.pow(blue[j].y + blue[j].r/2 - ry - 50,2);
+                    var countr = Math.pow(blue[j].r/2 + 50,2);
+                    if(countr > countx + county){
+                        if(blue[j].x === rx){
+                            blue[j].k = "endless";
+                        }else{
+                            blue[j].k = (blue[j].y - ry)/(blue[j].x - rx);
+                        }
+                        if(ry < blue[j].y){
+                            blue[j].d = 1;
+                        }else if(ry > blue[j].y){
+                            blue[j].d = -1;
+                        }else{
+                            if(rx > blue[j].x){
+                                blue[j].d = -1;
+                            }else{
+                                blue[j].d = 1;
+                            }
+                        }
+                    }
+                }
+            });
+            function move(){
+                for(var i=0;i<blue.length;i++){
+                    if(blue[i].k){
+                        if(blue[i].k === "endless"){
+                            blue[i].y += blue[i].d;
+                            blue[i].x += 0;
+                        }else if(blue[i].k === 0){
+                            blue[i].x += blue[i].d;
+                            blue[i].y += 0;
+                        }else if(blue[i].k < 1){
+                            blue[i].y += blue[i].d/Math.abs(blue[i].k);
+                            blue[i].x += blue[i].d/blue[i].k;
+                        }else{
+                            blue[i].y += blue[i].d;
+                            blue[i].x += blue[i].d/blue[i].k;
+                        }
+                        // if(
+                        //     blue[i].x <= -100 || blue[i].x >= 1100 || blue[i].y <= -100 || blue[i].y >= 900
+                        //   )
+                        // {
+                        //     blue[i].x = 1000 - (blue[i].x + 50) - 50;
+                        //     blue[i].y = 800 - (blue[i].y + 50) - 50;
+                        // }
+                        if(blue[i].x <= -100){
+                            blue[i].x += 1100;
+                        }else if(blue[i].x >= 1100){
+                            blue[i].x -= 1100;
+                        }
+                        if(blue[i].y <= -100){
+                            blue[i].y += 900;
+                        }else if(blue[i].y >= 800){
+                            blue[i].y -= 900;
+                        }
+                    }
+                }
+                ctx.clearRect(0,0,1000,800);
+                ctx.drawImage(imgR,rx,ry,100,100);
+                drawBlue();
+                requestAnimationFrame(move);
+            }
+            move();
+        }
+        
+    </script>
+</body>
+</html>
